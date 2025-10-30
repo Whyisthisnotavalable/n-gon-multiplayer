@@ -607,7 +607,7 @@ ${simulation.difficultyMode > 4 ? `<details id="constraints-details" style="padd
     <input type="search" id="sort-input" style="width: 8em;font-size: 0.6em;color:#000;" placeholder="sort by" />
     <button onclick="build.sortTech('input')" class='sort-button' style="border-radius: 0em;border: 1.5px #000 solid;font-size: 0.6em;" value="damage">sort</button>
 </div>`;
-        const ejectClass = (tech.isPauseEjectTech && !simulation.isChoosing) ? 'pause-eject' : ''
+        const ejectClass = (tech.isPauseEjectTech && !simulation.isChoosing && m.immuneCycle < m.cycle) ? 'pause-eject' : ''
         for (let i = 0, len = tech.tech.length; i < len; i++) {
             if (tech.tech[i].count > 0) {
                 const style = (localSettings.isHideImages || tech.tech[i].isJunk || tech.tech[i].isLore) ? `style="height:auto;"` : `style = "background-image: url('img/${tech.tech[i].name}.webp');"`
@@ -1637,7 +1637,7 @@ window.addEventListener("keydown", function (event) {
                 </tr>
                 <tr>
                     <td class='key-input-pause'>–/+</td>
-                    <td class='key-used'>zoom in / out</td>
+                    <td class='key-used'>zoom out / in</td>
                 </tr>
                 <tr>
                     <td class='key-input-pause'>1-8</td>
@@ -1696,13 +1696,13 @@ window.addEventListener("keydown", function (event) {
     if (simulation.testing) {
         if (event.key === "X") m.death(); //only uppercase
         switch (event.key.toLowerCase()) {
-            case "=":
+            case "-":
                 // simulation.isAutoZoom = false;
                 // simulation.zoomScale /= 0.9;
                 // simulation.setZoom();
                 simulation.zoomTransition(simulation.zoomScale / 0.9)
                 break;
-            case "-":
+            case "=":
                 // simulation.isAutoZoom = false;
                 // simulation.zoomScale *= 0.9;
                 // simulation.setZoom();

@@ -1399,64 +1399,84 @@ const m = {
             m.isAltSkin = true
             m.yOffWhen.stand = 52
             m.yOffWhen.jump = 72
-            m.coyoteCycles = 12 + 120 * tech.isCoyote
+            m.coyoteCycles = 12 //+ 120 * tech.isCoyote
             m.hardLandCDScale = 0.5
             m.hardLanding = 250
             m.squirrelFx = 1.4;
-            m.squirrelJump = 1.17;
+            // m.squirrelJump = 1.17;
             m.setMovement()
 
+            m.ledgeCoyote = 0
             m.draw = function () {
 
+                const ledgeJump = function (xForce) {
+                    if (input.up &&
+                        m.buttonCD_jump + 20 < m.cycle &&
+                        !m.onGround
+                    ) {
+                        m.buttonCD_jump = m.cycle; //can't jump again until 20 cycles pass
+                        player.force.y = -m.jumpForce; //player jump force
+                        //if head is clear don't do xForce
+                        if (Matter.Query.ray(map, { x: m.pos.x - sensorWidth, y: m.pos.y }, { x: m.pos.x + sensorWidth, y: m.pos.y }).length) {
+                            console.log('head not clear')
+                            player.force.x = xForce * m.jumpForce; //player jump force
+                        }
+                        Matter.Body.setVelocity(player, { x: 0, y: 0 });//zero player y-velocity for consistent jumps
+                        m.yOffGoal = m.yOffWhen.jump;
+                    }
+                }
 
-                // const bounds = {
-                //     min: {
-                //         x: m.pos.x - 30,
-                //         y: m.pos.y
-                //     },
-                //     max: {
-                //         x: m.pos.x + 30,
-                //         y: m.pos.y + 90
-                //     }
+                const sensorWidth = 25
+                // if (input.right) {
+                //     // console.log(Matter.Query.collides(player, [...map, ...body]))
+                //     console.log(Matter.Query.ray([...map, ...body], { x: m.pos.x + sensorWidth, y: m.pos.y + 50 }, { x: m.pos.x + sensorWidth, y: m.pos.y + 95 }))
+                //     ctx.beginPath()
+                //     ctx.moveTo(m.pos.x + sensorWidth, m.pos.y + 50);
+                //     ctx.lineTo(m.pos.x + sensorWidth, m.pos.y + 95);
+                //     ctx.strokeStyle = "red";
+                //     ctx.lineWidth = 3;
+                //     ctx.stroke();
                 // }
-                // const hit = Matter.Query.region(map, bounds)
-
-
-                // // Draw the rectangle
-                // const x = bounds.min.x;
-                // const y = bounds.min.y;
-                // const width = bounds.max.x - bounds.min.x;
-                // const height = bounds.max.y - bounds.min.y;
-                // ctx.strokeStyle = hit.length ? "#f00" : "#000"
-                // ctx.strokeRect(x, y, width, height);
-
-
-
-
-                //ledge grab if
-                //   area around head is not touching anything 
-                //   area around body is touching map
-                //   player is not on the ground
-                if (input.up &&
-                    m.buttonCD_jump + 20 < m.cycle &&
+                // [...map, ...body]
+                // console.log(player.velocity.y)
+                if (input.left &&
                     !m.onGround &&
-                    !Matter.Query.region([...map, ...body], {
-                        min: { x: m.pos.x - 40, y: m.pos.y - 30 },
-                        max: { x: m.pos.x + 40, y: m.pos.y - 10 }
-                    }).length &&
-                    Matter.Query.region([...map, ...body], {
-                        min: { x: m.pos.x - 40, y: m.pos.y },
-                        max: { x: m.pos.x + 40, y: m.pos.y + 95 }
-                    }).length
+                    player.velocity.y > -10 &&
+                    m.cycle > m.lastOnGroundCycle + 10 &&
+                    m.buttonCD_jump + 20 < m.cycle &&
+                    Matter.Query.ray(map, { x: m.pos.x - sensorWidth, y: m.pos.y + 50 }, { x: m.pos.x - sensorWidth, y: m.pos.y + 95 }).length
                 ) {
-                    // m.jump()
-
-                    m.buttonCD_jump = m.cycle; //can't jump again until 20 cycles pass
-                    player.force.y = -0.85 * m.jumpForce; //player jump force
+                    m.ledgeCoyote = -20
                     Matter.Body.setVelocity(player, { //zero player y-velocity for consistent jumps
-                        x: player.velocity.x,
-                        y: 0
+                        x: 0,
+                        y: 0.65 * player.velocity.y
                     });
+                    player.force.y -= player.mass * simulation.g; //undo gravity to prevent slipping
+                    m.yOffGoal = m.yOffWhen.stand;
+                    ledgeJump(0.4)
+                } else if (input.right &&
+                    !m.onGround &&
+                    player.velocity.y > -10 &&
+                    m.cycle > m.lastOnGroundCycle + 10 &&
+                    m.buttonCD_jump + 20 < m.cycle &&
+                    Matter.Query.ray(map, { x: m.pos.x + sensorWidth, y: m.pos.y + 50 }, { x: m.pos.x + sensorWidth, y: m.pos.y + 95 }).length
+                ) {
+                    m.ledgeCoyote = 20
+                    Matter.Body.setVelocity(player, { //zero player y-velocity for consistent jumps
+                        x: 0,
+                        y: 0.65 * player.velocity.y
+                    });
+                    player.force.y -= player.mass * simulation.g; //undo gravity to prevent slipping
+                    m.yOffGoal = m.yOffWhen.stand;
+                    ledgeJump(-0.4)
+                } else if (m.ledgeCoyote > 0) {
+                    m.ledgeCoyote--
+                    ledgeJump(-0.6)
+                    if (!m.onGround) m.yOffGoal = m.yOffWhen.jump;
+                } else if (m.ledgeCoyote < 0) {
+                    m.ledgeCoyote++
+                    ledgeJump(0.6)
+                    if (!m.onGround) m.yOffGoal = m.yOffWhen.jump;
                 }
 
 
@@ -1666,7 +1686,7 @@ const m = {
             m.yOffWhen.stand = 52
             m.yOffWhen.jump = 72
             m.coyoteCycles = 11 + 120 * tech.isCoyote
-
+            m.squirrelJump = 1.15;
             m.squirrelFx = 1.28;
             m.setMovement()
             // m.speedSmooth = 0
@@ -1796,6 +1816,9 @@ const m = {
         },
         energy() {
             m.isAltSkin = true
+            m.squirrelFx = 1.28;
+            m.setMovement()
+
             m.color = {
                 hue: 184,
                 sat: 100,
@@ -3910,7 +3933,7 @@ const m = {
                     const fieldRange2 = (0.68 + 0.37 * Math.sin(m.cycle / 37)) * m.fieldRange * m.harmonicRadius
                     const fieldRange3 = (0.7 + 0.35 * Math.sin(m.cycle / 47)) * m.fieldRange * m.harmonicRadius
                     const netFieldRange = Math.max(fieldRange1, fieldRange2, fieldRange3)
-                    ctx.fillStyle = "rgba(110,170,200," + Math.min(0.55, (0.04 + 0.7 * m.energy * (0.1 + 0.11 * Math.random()))) + ")";
+                    ctx.fillStyle = "rgba(110,170,200," + Math.min(0.45, (0.05 + 0.6 * m.energy * (0.1 + 0.11 * Math.random()))) + ")";
                     ctx.beginPath();
                     ctx.arc(m.pos.x, m.pos.y, fieldRange1, 0, 2 * Math.PI);
                     ctx.fill();
@@ -3940,7 +3963,7 @@ const m = {
                     const radius = m.fieldRange * m.harmonicRadius
                     ctx.lineWidth = 1;
                     ctx.strokeStyle = "rgba(110,170,200,0.8)"
-                    ctx.fillStyle = "rgba(110,170,200," + Math.min(0.6, 0.7 * m.energy * (0.11 + 0.1 * Math.random()) * (3 / tech.harmonics)) + ")";
+                    ctx.fillStyle = "rgba(110,170,200," + Math.min(0.5, 0.6 * m.energy * (0.11 + 0.1 * Math.random()) * (3 / tech.harmonics)) + ")";
                     // ctx.fillStyle = "rgba(110,170,200," + Math.min(0.7, m.energy * (0.22 - 0.01 * tech.harmonics) * (0.5 + 0.5 * Math.random())) + ")";
                     for (let i = 0; i < tech.harmonics; i++) {
                         ctx.beginPath();
@@ -4558,7 +4581,7 @@ const m = {
                     if (m.energy > m.maxEnergy - 0.02 && m.fieldCDcycle < m.cycle && !input.field && bullet.length < 300 && (m.cycle % 2)) {
                         if (simulation.molecularMode === 0) {
                             if (tech.isSporeFlea) {
-                                const drain = 0.18 + (Math.max(bullet.length, 130) - 130) * 0.02
+                                const drain = 0.18 + (Math.max(bullet.length, 200) - 200) * 0.02
                                 if (m.energy > drain) {
                                     m.energy -= drain
                                     const speed = m.crouch ? 20 + 8 * Math.random() : 10 + 3 * Math.random()
@@ -4572,7 +4595,7 @@ const m = {
                                     m.fieldUpgrades[4].endoThermic(drain)
                                 }
                             } else if (tech.isSporeWorm) {
-                                const drain = 0.18 + (Math.max(bullet.length, 130) - 130) * 0.02
+                                const drain = 0.18 + (Math.max(bullet.length, 200) - 200) * 0.02
                                 if (m.energy > drain) {
                                     m.energy -= drain
                                     b.worm({
@@ -4587,7 +4610,7 @@ const m = {
                                     m.fieldUpgrades[4].endoThermic(drain)
                                 }
                             } else {
-                                const drain = 0.095 + (Math.max(bullet.length, 130) - 130) * 0.01
+                                const drain = 0.095 + (Math.max(bullet.length, 200) - 200) * 0.01
                                 for (let i = 0, len = 5; i < len; i++) {
                                     if (m.energy > 3 * drain) {
                                         m.energy -= drain
@@ -4622,7 +4645,7 @@ const m = {
                             m.fieldUpgrades[4].endoThermic(drain)
                         } else if (simulation.molecularMode === 3) {
                             if (tech.isDroneRadioactive) {
-                                const drain = 0.8 + (Math.max(bullet.length, 50) - 50) * 0.01
+                                const drain = 0.8 + (Math.max(bullet.length, 150) - 150) * 0.01
                                 if (m.energy > drain) {
                                     m.energy -= drain
                                     b.droneRadioactive({
@@ -4634,7 +4657,7 @@ const m = {
                             } else {
                                 //every bullet above 100 adds 0.005 to the energy cost per drone
                                 //at 200 bullets the energy cost is 0.45 + 100*0.006 = 1.05
-                                const drain = (0.45 + (Math.max(bullet.length, 100) - 100) * 0.006) * tech.droneEnergyReduction
+                                const drain = (0.45 + (Math.max(bullet.length, 200) - 200) * 0.006) * tech.droneEnergyReduction
                                 if (m.energy > drain) {
                                     m.energy -= drain
                                     b.drone()
