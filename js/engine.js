@@ -14,15 +14,89 @@ const Engine = Matter.Engine,
 // create an engine
 const engine = Engine.create();
 engine.world.gravity.scale = 0; //turn off gravity (it's added back in later)
-// engine.velocityIterations = 100
-// engine.positionIterations = 100
 // engine.enableSleeping = true
+
+//to reduce lag, maybe
+engine.constraintIterations = 1; //default is 2
+// engine.positionIterations = 4; //default is 6
+// engine.velocityIterations = 2; //default is 4
+
+
+
+// const removalQueue = [];
+
+// // Helper to queue any type of removal
+// function queueRemoval(type, index) {
+//     // Avoid duplicate entries
+//     if (!removalQueue.some(r => r.type === type && r.index === index)) {
+//         removalQueue.push({ type, index });
+//     }
+// }
+
+// Events.on(engine, 'afterUpdate', () => {
+//     // Grouped by type, sort each group descending so splices don't shift indices
+//     const types = ['map', 'body', 'mob', 'powerUp', 'cons', 'consBB', 'bullet', 'composite'];
+
+//     types.forEach(type => {
+//         const entries = removalQueue
+//             .filter(r => r.type === type)
+//             .map(r => r.index)
+//             .sort((a, b) => b - a);
+
+//         entries.forEach(i => {
+//             switch (type) {
+//                 case 'map':
+//                     Matter.Composite.remove(engine.world, map[i]);
+//                     map.splice(i, 1);
+//                     break;
+//                 case 'body':
+//                     Matter.Composite.remove(engine.world, body[i]);
+//                     body.splice(i, 1);
+//                     break;
+//                 case 'mob':
+//                     Matter.Composite.remove(engine.world, mob[i]);
+//                     mob.splice(i, 1);
+//                     break;
+//                 case 'powerUp':
+//                     Matter.Composite.remove(engine.world, powerUp[i]);
+//                     powerUp.splice(i, 1);
+//                     break;
+//                 case 'cons':
+//                     Matter.Composite.remove(engine.world, cons[i]);
+//                     cons.splice(i, 1);
+//                     break;
+//                 case 'consBB':
+//                     Matter.Composite.remove(engine.world, consBB[i]);
+//                     consBB.splice(i, 1);
+//                     break;
+//                 case 'bullet':
+//                     Matter.Composite.remove(engine.world, bullet[i]);
+//                     bullet.splice(i, 1);
+//                     break;
+//                 case 'composite':
+//                     Matter.Composite.remove(engine.world, composite[i]);
+//                     composite.splice(i, 1);
+//                     break;
+//             }
+//         });
+//     });
+
+//     removalQueue.length = 0;
+// });
+
+
+
+
+
+
+
 
 // matter events
 function playerOnGroundCheck(event) {
     //runs on collisions events
     function enter() {
         m.numTouching++;
+        // m.groundCount++
         if (!m.onGround) {
             m.onGround = true;
             if (m.crouch) {
@@ -41,14 +115,36 @@ function playerOnGroundCheck(event) {
                     m.yOff = m.yOffWhen.jump;
                     m.hardLandCD = m.cycle + m.hardLandCDScale * Math.min(momentum / 6.5 - 6, 40)
                     // m.hardLandCD = m.cycle + m.hardLandCDScale * Math.min(0.2 * momentum - 7.5, 60)
+                    if (tech.isFallWave && tech.isFallingDamage && momentum < 150) {
+                        simulation.ephemera.push({
+                            count: Math.floor(0.13 * m.hardLandCDScale * (momentum / 6.5 - 6)), //cycles before it self removes
+                            where: { x: m.pos.x, y: m.pos.y + 140 },
+                            do() {
+                                this.count--
+                                if (this.count < 0) simulation.removeEphemera(this)
+                                b.isoWave360Solo(this.where, 39 * Math.sqrt(tech.bulletsLastLonger))
+                            },
+                        })
+                    }
                 } else {
                     m.yOffGoal = m.yOffWhen.stand;
                 }
                 //falling damage
                 if (tech.isFallingDamage && m.immuneCycle < m.cycle && momentum > 150) {
                     // m.takeDamage(Math.min(Math.sqrt(momentum - 100) * 0.02, 0.4) * spawn.dmgToPlayerByLevelsCleared());
-                    m.takeDamage(Math.min(Math.sqrt(momentum - 100) * 0.03, 0.6));
-                    // m.takeDamage(20);
+                    const dmg = Math.min(Math.sqrt(momentum - 100) * 0.04, 0.8)
+                    m.takeDamage(dmg);
+                    if (tech.isFallWave) {
+                        simulation.ephemera.push({
+                            count: Math.floor(0.13 * m.hardLandCDScale * (momentum / 6.5 - 6)), //cycles before it self removes
+                            where: { x: m.pos.x, y: m.pos.y + 140 },
+                            do() {
+                                this.count--
+                                if (this.count < 0) simulation.removeEphemera(this)
+                                b.isoWave360Solo(this.where, 333 * Math.sqrt(tech.bulletsLastLonger))
+                            },
+                        })
+                    }
                     if (m.immuneCycle < m.cycle + m.collisionImmuneCycles) m.immuneCycle = m.cycle + m.collisionImmuneCycles; //player is immune to damage for 30 cycles
                 }
             }
@@ -78,14 +174,19 @@ function playerOffGroundCheck(event) {
         if (pairs[i].bodyA === jumpSensor) { //|| pairs[i].bodyB === jumpSensor) {
             if (m.onGround && m.numTouching === 0) {
                 m.onGround = false;
+                // m.groundCount = 0
                 m.lastOnGroundCycle = m.cycle;
                 m.hardLandCD = 0 // disable hard landing
-                if (m.checkHeadClear()) {
-                    if (m.crouch) {
-                        m.undoCrouch();
-                    }
-                    m.yOffGoal = m.yOffWhen.jump;
+                // if (m.checkHeadClear()) {
+                //     if (m.crouch) {
+                //         m.undoCrouch();
+                //     }
+                //     m.yOffGoal = m.yOffWhen.jump;
+                // }
+                if (m.crouch && m.checkHeadClear()) {
+                    m.undoCrouch();
                 }
+                m.yOffGoal = m.yOffWhen.jump;
             }
         }
     }
@@ -125,8 +226,14 @@ function collisionChecks(event) {
                             simulation.trails(90)
                             simulation.inGameConsole(`simulation.amplitude <span class='color-symbol'>=</span> ${Math.random()}`);
                         }
-                        if (tech.isPiezo) m.energy += 20.48 * level.isReducedRegen;
-                        if (tech.isExplodeContact) b.explosion(m.pos, 450);
+                        if (tech.isPiezo) {
+                            m.energy += 20.48 * level.isReducedRegen;
+                            for (let i = 0; i < 9; i++)simulation.energyGenGraphic()
+                        }
+                        if (tech.isConchoidal) {
+                            m.damageDone /= tech.conchoidalDamage
+                            tech.conchoidalDamage = 1
+                        }
 
                         if (tech.isCouplingNoHit && m.coupling > 0) {
                             m.couplingChange(-3)
@@ -208,50 +315,37 @@ function collisionChecks(event) {
                         // }
                     } else {
                         //mob + bullet collisions
-                        if (obj.classType === "bullet" && obj.speed > obj.minDmgSpeed) {
+                        if (obj.classType === "bullet" && obj.speed > obj.minDmgSpeed && !m.isTimeDilated && mob[k].damageReduction) {
+
                             obj.beforeDmg(mob[k]); //some bullets do actions when they hits things, like despawn //forces don't seem to work here
                             let dmg = (obj.dmg + 0.15 * obj.mass * Vector.magnitude(Vector.sub(mob[k].velocity, obj.velocity)))
                             if (tech.isCrit && mob[k].isStunned) dmg *= 4
-                            // console.log(dmg)
-
-                            mob[k].damage(dmg);
+                            if (!obj.isNotCollisionsDmg) mob[k].damage(dmg, false, { x: pairs[i].activeContacts[0].vertex.x, y: pairs[i].activeContacts[0].vertex.y }, true)
                             if (mob[k].alive) mob[k].foundPlayer();
-                            if (mob[k].damageReduction) {
-                                simulation.drawList.push({ //add dmg to draw queue
-                                    x: pairs[i].activeContacts[0].vertex.x,
-                                    y: pairs[i].activeContacts[0].vertex.y,
-                                    radius: Math.log(dmg + 1.1) * 40 * mob[k].damageReduction + 3,
-                                    color: simulation.playerDmgColor,
-                                    time: simulation.drawTime
-                                });
-                            }
+                            simulation.drawList.push({ //add dmg to draw queue
+                                x: pairs[i].activeContacts[0].vertex.x,
+                                y: pairs[i].activeContacts[0].vertex.y,
+                                radius: Math.log(dmg + 1.1) * 40 * mob[k].damageReduction + 3,
+                                color: simulation.playerDmgColor,
+                                time: simulation.drawTime
+                            });
                             if (tech.isLessDamageReduction && !mob[k].shield) mob[k].damageReduction *= mob[k].isBoss ? (mob[k].isFinalBoss ? 1.0005 : 1.0025) : 1.05
+
                             return;
                         }
                         //mob + body collisions
                         if (obj.classType === "body" && obj.speed > 9) {
                             const v = Vector.magnitude(Vector.sub(mob[k].velocity, obj.velocity));
                             if (v > 11) {
-                                if (tech.blockDmg) { //electricity
-                                    Matter.Body.setVelocity(mob[k], { x: 0.5 * mob[k].velocity.x, y: 0.5 * mob[k].velocity.y });
-                                    if (tech.isBlockRadiation && !mob[k].isShielded && !mob[k].isMobBullet) {
-                                        mobs.statusDoT(mob[k], tech.blockDmg * 0.42, 180) //200% increase -> x (1+2) //over 7s -> 360/30 = 12 half seconds -> 3/12
-                                    } else {
-                                        mob[k].damage(tech.blockDmg)
-                                        simulation.drawList.push({
-                                            x: pairs[i].activeContacts[0].vertex.x,
-                                            y: pairs[i].activeContacts[0].vertex.y,
-                                            radius: 28 * mob[k].damageReduction + 3,
-                                            color: "rgba(255,0,255,0.8)",
-                                            time: 4
-                                        });
-                                    }
-                                }
-
                                 let dmg = tech.blockDamage * v * obj.mass * (tech.isMobBlockFling ? 2.5 : 1) * (tech.isBlockRestitution ? 2.5 : 1) * ((m.fieldMode === 0 || m.fieldMode === 8) ? 1 + 0.05 * m.coupling : 1);
                                 if (mob[k].isShielded) dmg *= 0.7
 
-                                mob[k].damage(dmg, true);
+                                if (tech.isIrradiated) {
+                                    mobs.statusDoT(mob[k], dmg * 0.62, tech.isLongRadiation ? 715392000 : 180) // one tick every 30 cycles
+                                    dmg *= 0.5
+                                }
+                                mob[k].damage(dmg, false, { x: pairs[i].activeContacts[0].vertex.x, y: pairs[i].activeContacts[0].vertex.y }, true)
+
                                 if (tech.isBlockPowerUps && !mob[k].alive && mob[k].isDropPowerUp && Math.random() < 0.5) {
                                     options = ["coupling", "boost", "heal", "research", "ammo"]
                                     powerUps.spawn(mob[k].position.x, mob[k].position.y, options[Math.floor(Math.random() * options.length)]);

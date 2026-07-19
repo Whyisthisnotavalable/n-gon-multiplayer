@@ -37,13 +37,15 @@ body {
 }
 
 select {
-    font-size: 0.8em;
+    font-size: 1em;
     border: 1px #333 solid;
     border-radius: 6px;
-}
-
-select option {
-    background-color: #fff;
+    /* padding: 0px 5px; */
+    /* appearance: none; */
+    /* font-family: sans-serif; */
+    /* background-color: #eef1f6; */
+    color: #000;
+    cursor: pointer;
 }
 
 input {
@@ -258,6 +260,8 @@ summary {
     line-height: 160%;
     background-color: var(--card-color);
     font-size: 0.75em;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 .choose-grid-module:hover {
@@ -318,6 +322,8 @@ summary {
     line-height: 160%;
     background-color: var(--card-color);
     font-size: 0.75em;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 .sort {
@@ -374,6 +380,8 @@ summary {
     line-height: 160%;
     background-color: var(--card-color);
     font-size: 0.75em;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 .experiment-grid-hide {
@@ -636,27 +644,6 @@ summary {
     transition: opacity 1s;
 }
 
-#damage-bar {
-    position: absolute;
-    /* top: 1px;
-    left: 15px;
-    height: 7px;
-    width: 0px;
-    transition: width 0.3s linear; */
-    top: 16px;
-    right: 4px;
-    height: 0px;
-    width: 7px;
-    transition: height 0.25s linear;
-    opacity: 1;
-    z-index: 2;
-    pointer-events: none;
-    background-color: rgb(255, 55, 95);
-    /* border-bottom: 1.5px solid #701; */
-    /* border-right: 1.5px solid #701; */
-    display: none;
-}
-
 #defense-bar {
     position: absolute;
     top: 8px;
@@ -743,10 +730,26 @@ summary {
     border-radius: 5px;
 }
 
+/* #damage-num {
+    position: absolute;
+    top: 80px;
+    left: 15px;
+    z-index: 2;
+    font-size: 23px;
+    color: rgb(108, 0, 0);
+    text-align: right;
+    opacity: 0.7;
+    background-color: rgba(190, 210, 245, 0.25);
+    user-select: none;
+    pointer-events: none;
+    padding: 0px 5px 0px 5px;
+    border-radius: 5px;
+} */
+
 #right-HUD {
     position: absolute;
     top: 15px;
-    right: 15px;
+    right: 10px;
     z-index: 2;
     font-size: 20px;
     text-align: right;
@@ -776,7 +779,7 @@ summary {
 #right-HUD-constraint {
     position: absolute;
     top: 12px;
-    right: 15px;
+    right: 10px;
     z-index: 2;
     font-size: 20px;
     text-align: right;
@@ -859,6 +862,60 @@ summary {
 .color-gun {
     color: hsl(218, 100%, 58%);
 }
+
+.color-paused {
+    color: #fff;
+    background-color: #678;
+    /* font-weight: 200; */
+    padding: 0px 2px;
+}
+
+/* .color-paused {
+    position: relative;
+
+    font-weight: bold;
+    animation: vcr-random 3s infinite;
+}
+
+@keyframes vcr-random {
+    0% {
+        text-shadow: 0.5px 0 rgba(255, 0, 0, 0.5), -0.5px 0 rgba(0, 255, 255, 0.5);
+        transform: translate(0);
+    }
+
+    2% {
+        text-shadow: 1.5px 0 rgba(255, 0, 0, 0.6), -1.5px 0 rgba(0, 255, 255, 0.6);
+        transform: translate(1px, 0);
+    }
+
+    4% {
+        text-shadow: -1px 0 rgba(255, 0, 0, 0.5), 1px 0 rgba(0, 255, 255, 0.5);
+        transform: translate(-1px, 0);
+    }
+
+    5% {
+        text-shadow: none;
+        transform: translate(0);
+    }
+
+
+    6% {
+        text-shadow: 2px 0 rgba(255, 0, 0, 0.3), -1px 0 rgba(0, 255, 255, 0.3);
+        opacity: 0.7;
+    }
+
+    8% {
+        text-shadow: none;
+        opacity: 1;
+    }
+
+    10%,
+    100% {
+        text-shadow: none;
+        transform: translate(0);
+        opacity: 1;
+    }
+} */
 
 .highlight {
     border-radius: 6px;
@@ -972,6 +1029,19 @@ summary {
 .color-dark-matter {
     color: #246;
     text-shadow: 0px 0px 7px #246;
+}
+
+.color-wire {
+    /* font-family: 'Century Gothic', AppleGothic, 'URW Gothic L', sans-serif; */
+    /* color: rgba(0, 0, 0, 0.05);
+    -webkit-text-stroke: 1px #000;
+    font-family: 'Inter', sans-serif;
+    font-weight: 900;
+    letter-spacing: 0px; */
+
+
+    text-decoration: #000 wavy underline 2px;
+    text-decoration-skip-ink: none;
 }
 
 .color-tokamak {
@@ -1131,10 +1201,10 @@ summary {
 }
 
 .circle-grid-instant {
-    width: 1.3em;
-    height: 1.3em;
+    width: 1.15em;
+    height: 1.15em;
     border-radius: 50%;
-    border: 0.15em solid hsl(255, 100%, 71%);
+    border: 0.18em solid hsl(255, 100%, 71%);
     display: inline-block;
     margin-bottom: -0.5em;
     margin-top: -0.3em;
@@ -1146,8 +1216,8 @@ summary {
     height: 1.3em;
     border-radius: 50%;
     display: inline-block;
-    background-color: #fff;
-    opacity: 0.8;
+    background-color: #eee;
+    opacity: 1;
     border: 0.08em solid #222;
     position: absolute;
     top: -0.05em;
@@ -1176,21 +1246,11 @@ summary {
     height: 0.9em;
     border-radius: 50%;
     display: inline-block;
-    background-color: #f7b;
-    border: 0.065em #fff solid;
-    opacity: 0.85;
+    background-color: rgb(255, 134, 194);
+    /* rgb(255, 132, 193); */
+    border: 0.068em #fff solid;
+    opacity: 1;
     margin-bottom: -0.1em;
-}
-
-.ammo-circle {
-    width: 0.75em;
-    height: 0.75em;
-    border-radius: 50%;
-    display: inline-block;
-    background-color: #467;
-    border: 0.05em #fff solid;
-    opacity: 0.95;
-    margin-bottom: -1.5px;
 }
 
 .heal-circle {
@@ -1201,7 +1261,7 @@ summary {
     background-color: #0d9;
     border: 0.05em #fff solid;
     opacity: 0.85;
-    margin-bottom: -2px;
+    margin-bottom: -1px;
 }
 
 .heal-circle-energy {
@@ -1215,6 +1275,17 @@ summary {
     margin-bottom: -2px;
 }
 
+.ammo-circle {
+    width: 0.75em;
+    height: 0.75em;
+    border-radius: 50%;
+    display: inline-block;
+    background-color: #467;
+    border: 0.05em #fff solid;
+    opacity: 0.95;
+    margin-bottom: -0.5px;
+}
+
 .coupling-circle {
     width: 0.7em;
     height: 0.7em;
@@ -1222,6 +1293,16 @@ summary {
     display: inline-block;
     background-color: #0ae;
     border: 0.05em #fff solid;
+    margin-bottom: -0.5px;
+}
+
+.energy-circle {
+    width: 0.7em;
+    height: 0.7em;
+    border-radius: 50%;
+    display: inline-block;
+    background-color: #ff0;
+    border: 0.05em #000 solid;
     margin-bottom: -0.5px;
 }
 
@@ -1263,7 +1344,7 @@ summary {
 }
 
 .research {
-    background-color: #f7b;
+    background-color: rgb(255, 86, 171);
 }
 
 .color-speed {
@@ -1691,6 +1772,18 @@ summary {
     width: 2rem;
     writing-mode: vertical-lr;
     direction: ltr;
+}
+
+.tech-slider {
+    /* height: 0.5em; */
+    vertical-align: middle;
+    /* width: 13em; */
+    width: 70%;
+    padding-right: 0px;
+    padding-left: 0px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .left-column {

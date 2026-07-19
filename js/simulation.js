@@ -18,7 +18,7 @@ const simulation = {
         level.custom();
         powerUps.do();
         mobs.draw();
-        simulation.draw.cons();
+        // simulation.draw.cons();
         simulation.draw.body();
         if (!m.isTimeDilated) mobs.loop();
         m.draw();
@@ -131,7 +131,8 @@ const simulation = {
         }
     },
     runEphemera() {
-        for (let i = 0; i < simulation.ephemera.length; i++) {
+        // for (let i = 0; i < simulation.ephemera.length; i++) {
+        for (let i = simulation.ephemera.length - 1; i >= 0; i--) {
             simulation.ephemera[i].do();
         }
     },
@@ -204,101 +205,7 @@ const simulation = {
     accelScale: null,
     CDScale: null,
     molecularMode: Math.floor(4 * Math.random()), //0 spores, 1 missile, 2 ice IX, 3 drones //randomize molecular assembler field type
-    // dropFPS(cap = 40, time = 15) {
-    //   simulation.fpsCap = cap
-    //   simulation.fpsInterval = 1000 / simulation.fpsCap;
-    //   simulation.defaultFPSCycle = simulation.cycle + time
-    //   const normalFPS = function () {
-    //     if (simulation.defaultFPSCycle < simulation.cycle) {
-    //       simulation.fpsCap = 72
-    //       simulation.fpsInterval = 1000 / simulation.fpsCap;
-    //     } else {
-    //       requestAnimationFrame(normalFPS);
-    //     }
-    //   };
-    //   requestAnimationFrame(normalFPS);
-    // },
-    // clip() {
 
-    // },
-    pixelGraphics() {
-        //copy current canvas pixel data
-        let imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        let data = imgData.data;
-        //change pixel data
-
-
-        // const off = 4 * Math.floor(x) + 4 * canvas.width * Math.floor(y);
-        // multiple windows
-        for (let i = data.length / 2; i < data.length; i += 4) {
-            index = i % (canvas.width * canvas.height * 2) // + canvas.width*4*canvas.height
-
-            data[i + 0] = data[index + 0]; // red
-            data[i + 1] = data[index + 1]; // red
-            data[i + 2] = data[index + 2]; // red
-            data[i + 3] = data[index + 3]; // red
-        }
-
-        for (let x = 0; x < len; x++) {
-
-        }
-
-
-
-        // const startX = 2 * canvas.width + 2 * canvas.width * canvas.height
-        // const endX = 4 * canvas.width + 4 * canvas.width * canvas.height
-        // const startY = 2 * canvas.width + 2 * canvas.width * canvas.height
-        // const endY = 4 * canvas.width + 4 * canvas.width * canvas.height
-        // for (let x = startX; x < endX; x++) {
-        //   for (let y = startY; y < endY; y++) {
-
-        //   }
-        // }
-
-
-
-
-        //strange draw offset
-        // const off = canvas.height * canvas.width * 4 / 2
-        // for (let index = 0; index < data.length; index += 4) {
-        //   data[index + 0] = data[index + 0 + off]; // red
-        //   data[index + 1] = data[index + 1 + off]; // red
-        //   data[index + 2] = data[index + 2 + off]; // red
-        //   data[index + 3] = data[index + 3 + off]; // red
-        // }
-
-        //change all pixels
-        // for (let index = 0; index < data.length; index += 4) {
-        // data[index + 0] = 255; // red
-        // data[index + 1] = 255; // green
-        // data[index + 2] = 255; // blue
-        // data[index + 3] = 255; // alpha 
-        // }
-
-        //change random pixels
-        // for (let i = 0, len = Math.floor(data.length / 10); i < len; ++i) {
-        //   const index = Math.floor((Math.random() * data.length) / 4) * 4;
-        //   data[index + 0] = 255; // red
-        //   data[index + 1] = 0; // green
-        //   data[index + 2] = 0; // blue
-        //   data[index + 3] = 255 //Math.floor(Math.random() * Math.random() * 255); // alpha
-        // }
-
-        // //change random pixels
-        // for (let i = 0, len = Math.floor(data.length / 1000); i < len; ++i) {
-        //   const index = Math.floor((Math.random() * data.length) / 4) * 4;
-        //   // data[index] = data[index] ^ 255; // Invert Red
-        //   // data[index + 1] = data[index + 1] ^ 255; // Invert Green
-        //   // data[index + 2] = data[index + 2] ^ 255; // Invert Blue
-        //   data[index + 0] = 0; // red
-        //   data[index + 1] = 0; // green
-        //   data[index + 2] = 0; // blue
-        //   // data[index + 3] = 255 //Math.floor(Math.random() * Math.random() * 255); // alpha
-        // }
-
-        //draw new pixel data to canvas
-        ctx.putImageData(imgData, 0, 0);
-    },
     drawCursor() {
         const size = 10;
         ctx.beginPath();
@@ -358,39 +265,41 @@ const simulation = {
         }
     },
     circleFlare(dup, loops = 100) {
-        boltNum = dup * 300
-        const bolts = []
-        colors = [powerUps.research.color, powerUps.ammo.color, powerUps.heal.color, powerUps.tech.color, powerUps.field.color, powerUps.gun.color]
-        for (let i = 0; i < boltNum; ++i) {
-            const mag = 6 + 20 * Math.random()
-            const angle = 2 * Math.PI * Math.random()
-            bolts.push({
-                x: m.pos.x,
-                y: m.pos.y,
-                Vx: mag * Math.cos(angle),
-                Vy: mag * Math.sin(angle),
-                color: colors[Math.floor(Math.random() * colors.length)]
-            })
-        }
-        let count = 0
-        loop = () => { //draw electricity
-            if (count++ < loops) requestAnimationFrame(loop)
-            for (let i = 0, len = bolts.length; i < len; ++i) {
-                bolts[i].x += bolts[i].Vx
-                bolts[i].y += bolts[i].Vy
-                if (Math.random() < 0.2) {
-                    simulation.drawList.push({
-                        x: bolts[i].x,
-                        y: bolts[i].y,
-                        radius: 1.5 + 5 * Math.random(),
-                        // color: "rgba(0,155,155,0.7)",
-                        color: bolts[i].color,
-                        time: Math.floor(9 + 25 * Math.random() * Math.random())
-                    });
+        if (!localSettings.isHideHUD) {
+            boltNum = dup * 300
+            const bolts = []
+            colors = [powerUps.research.color, powerUps.ammo.color, powerUps.heal.color, powerUps.tech.color, powerUps.field.color, powerUps.gun.color]
+            for (let i = 0; i < boltNum; ++i) {
+                const mag = 6 + 20 * Math.random()
+                const angle = 2 * Math.PI * Math.random()
+                bolts.push({
+                    x: m.pos.x,
+                    y: m.pos.y,
+                    Vx: mag * Math.cos(angle),
+                    Vy: mag * Math.sin(angle),
+                    color: colors[Math.floor(Math.random() * colors.length)]
+                })
+            }
+            let count = 0
+            loop = () => { //draw electricity
+                if (count++ < loops) requestAnimationFrame(loop)
+                for (let i = 0, len = bolts.length; i < len; ++i) {
+                    bolts[i].x += bolts[i].Vx
+                    bolts[i].y += bolts[i].Vy
+                    if (Math.random() < 0.2) {
+                        simulation.drawList.push({
+                            x: bolts[i].x,
+                            y: bolts[i].y,
+                            radius: 1.5 + 5 * Math.random(),
+                            // color: "rgba(0,155,155,0.7)",
+                            color: bolts[i].color,
+                            time: Math.floor(9 + 25 * Math.random() * Math.random())
+                        });
+                    }
                 }
             }
+            requestAnimationFrame(loop)
         }
-        requestAnimationFrame(loop)
     },
     boldActiveGunHUD() {
         if (b.inventory.length > 0) {
@@ -405,6 +314,9 @@ const simulation = {
     },
     updateGunHUD() {
         for (let i = 0, len = b.inventory.length; i < len; ++i) {
+            // const num = b.guns[b.inventory[i]].ammo
+            // const ammo = Number.isFinite(num) ? " - " + num : ""
+            // document.getElementById(b.inventory[i]).innerHTML = `${b.guns[b.inventory[i]].name}${ammo}`
             document.getElementById(b.inventory[i]).innerHTML = `${b.guns[b.inventory[i]].name} - ${b.guns[b.inventory[i]].ammo}`
         }
     },
@@ -438,17 +350,46 @@ const simulation = {
         }
         document.getElementById("right-HUD").innerHTML = text
     },
+    dmgNumbers(where, dmg, color = "rgba(255, 0, 17,", size = 45, isOutline = false) {
+        if (localSettings.showDmgNumbers && dmg > 0) {
+            simulation.ephemera.push({
+                count: 0,
+                drift: { x: (0.6 * Math.random()) * (Math.random() < 0.5 ? -1 : 1), y: 1 + 0.5 * Math.random() },
+                font: `${size}px Arial`,
+                do() {
+                    this.count++
+                    if (this.count > size) {
+                        simulation.removeEphemera(this)
+                    } else {
+                        const opacity = Math.max(0, (2 * (60 - this.count)) / 60)
+                        ctx.fillStyle = `${color}${opacity})`;
+                        ctx.font = this.font;
+                        pos = Vector.add(where, Vector.mult(this.drift, -this.count))
+                        if (isOutline) {
+                            ctx.strokeStyle = `rgba(0,0,0,${opacity})`//"#000"
+                            ctx.lineWidth = 2;
+                            ctx.strokeText(dmg, pos.x, pos.y);
+                        }
+                        ctx.fillText(dmg, pos.x, pos.y);
+                    }
+                },
+            })
+        }
+    },
     lastLogTime: 0,
     isTextLogOpen: true,
+    consoleLength: 0,
     inGameConsole(text, time = 240) {
         if (!localSettings.isHideHUD && simulation.isTextLogOpen && !build.isExperimentSelection) {
-            if (simulation.lastLogTime > m.cycle) { //if there is an older message
+            if (simulation.lastLogTime > m.cycle && simulation.consoleLength < 30) { //if there is an older message
                 document.getElementById("text-log").innerHTML = document.getElementById("text-log").innerHTML + '<br>' + text;
                 simulation.lastLogTime = m.cycle + time;
+                simulation.consoleLength++
             } else {
                 document.getElementById("text-log").innerHTML = text;
                 document.getElementById("text-log").style.display = "inline";
                 simulation.lastLogTime = m.cycle + time;
+                simulation.consoleLength = 0
             }
         }
     },
@@ -492,6 +433,7 @@ const simulation = {
         } else {
             simulation.drawCursor = simulation.drawCursorBasic
         }
+        // b.setFireMethod()
     },
     zoom: null,
     zoomScale: 1000,
@@ -534,13 +476,13 @@ const simulation = {
         if (simulation.isAutoZoom) {
             simulation.ephemera.push({
                 name: "zoom",
-                count: simulation.testing ? 0 : 120, //cycles before it self removes
+                count: simulation.testing ? 1 : 120, //cycles before it self removes
                 currentLevel: level.onLevel,
                 do() {
                     this.count--
                     const step = (newZoomScale - simulation.zoomScale) / this.count
                     simulation.zoomScale += step
-                    if (this.count < 1 && this.currentLevel === level.onLevel && simulation.isAutoZoom) {
+                    if (this.count < 1 && simulation.isAutoZoom) {
                         simulation.zoomScale = newZoomScale
                         simulation.removeEphemera(this)
                     }
@@ -667,6 +609,17 @@ const simulation = {
                     }
                 }
             }
+
+            if (tech.wire && tech.wire.segments.length) {
+                requestAnimationFrame(() => {
+                    const r = 32 * player.scale
+                    const a = m.angle + Math.PI
+                    for (let i = 0; i < tech.wire.segments.length; i++) {
+                        tech.wire.segments[i].y = tech.wire.segments[i].oldY = m.pos.y + (r * Math.sin(a))
+                        tech.wire.segments[i].x = tech.wire.segments[i].oldX = m.pos.x + (r * Math.cos(a))
+                    }
+                })
+            }
         }
     },
     setupCamera() { //makes the camera not scroll after changing locations
@@ -722,6 +675,26 @@ const simulation = {
     restoreCamera() {
         ctx.restore();
     },
+    energyGenGraphic(totalCycles = 10 + Math.floor(Math.random() * 20)) {
+        //energy generation animation
+        if (!localSettings.isHideHUD) {
+            simulation.ephemera.push({
+                where: { x: m.pos.x + 45 * (Math.random() - 0.5), y: m.pos.y + Math.random() * 100 },
+                count: totalCycles,
+                r: 1.5 + 3 * Math.random(),
+                do() {
+                    this.count--
+                    if (this.count < 0) simulation.removeEphemera(this)
+                    this.where.y -= 3
+
+                    ctx.beginPath();
+                    ctx.arc(this.where.x, this.where.y, this.r, 0, 2 * Math.PI);
+                    ctx.fillStyle = m.fieldMeterColor
+                    ctx.fill();
+                },
+            })
+        }
+    },
     trails(swapPeriod = 150) {
         // const swapPeriod = 150
         const len = 30
@@ -740,38 +713,6 @@ const simulation = {
             }
         }, len * swapPeriod);
     },
-    // warp(translation = 5, skew = 0.05, scale = 0.05) {
-    // if (simulation.cycle % 2) { //have to alternate frames or else successive rumbles over write the effects of the previous rumble
-    // requestAnimationFrame(() => { ctx.setTransform(1, 0, 0, 1, 0, 0); }) //reset
-    // requestAnimationFrame(() => {
-    //     if (!simulation.paused && m.alive) {
-    //         ctx.transform(1 - scale * (Math.random() - 0.5), skew * (Math.random() - 0.5), skew * (Math.random() - 0.5), 1 - scale * (Math.random() - 0.5), translation * (Math.random() - 0.5), translation * (Math.random() - 0.5)); //ctx.transform(Horizontal scaling. A value of 1 results in no scaling,  Vertical skewing,   Horizontal skewing,   Vertical scaling. A value of 1 results in no scaling,   Horizontal translation (moving),   Vertical translation (moving)) //https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/setTransform
-    //     }
-    // })
-
-    //reset
-    // ctx.transform(1, 0, 0, 1, 0, 0); //ctx.transform(Horizontal scaling. A value of 1 results in no scaling,  Vertical skewing,   Horizontal skewing,   Vertical scaling. A value of 1 results in no scaling,   Horizontal translation (moving),   Vertical translation (moving)) //https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/setTransform
-
-    // }
-    // const loop = () => {
-    //     if (!simulation.paused && m.alive) {
-    //         ctx.save();
-    //         ctx.transform(1 - scale * (Math.random() - 0.5), skew * (Math.random() - 0.5), skew * (Math.random() - 0.5), 1 - scale * (Math.random() - 0.5), translation * (Math.random() - 0.5), translation * (Math.random() - 0.5)); //ctx.transform(Horizontal scaling. A value of 1 results in no scaling,  Vertical skewing,   Horizontal skewing,   Vertical scaling. A value of 1 results in no scaling,   Horizontal translation (moving),   Vertical translation (moving))
-    //         requestAnimationFrame(() => { ctx.restore(); })
-    //     }
-    // }
-    // requestAnimationFrame(loop);
-
-    // function loop() {
-    //     if (!simulation.paused && m.alive) {
-    //         ctx.save();
-    //         ctx.transform(1 - scale * (Math.random() - 0.5), skew * (Math.random() - 0.5), skew * (Math.random() - 0.5), 1 - scale * (Math.random() - 0.5), translation * (Math.random() - 0.5), translation * (Math.random() - 0.5)); //ctx.transform(Horizontal scaling. A value of 1 results in no scaling,  Vertical skewing,   Horizontal skewing,   Vertical scaling. A value of 1 results in no scaling,   Horizontal translation (moving),   Vertical translation (moving))
-    //         requestAnimationFrame(() => { ctx.restore(); })
-    //     }
-    //     requestAnimationFrame(loop);
-    // }
-    // requestAnimationFrame(loop);
-    // },
     wipe() { }, //set in simulation.startGame
     gravity() {
         function addGravity(bodies, magnitude) {
@@ -825,7 +766,6 @@ const simulation = {
         document.getElementById("dmg").style.display = "none";
         document.getElementById("health-bg").style.display = "none";
         document.getElementById("defense-bar").style.display = "none"
-        document.getElementById("damage-bar").style.display = "none"
         document.body.style.cursor = "auto";
         setTimeout(() => {
             document.getElementById("experiment-button").style.opacity = "1";
@@ -838,6 +778,23 @@ const simulation = {
     fpsInterval: 0, //set in startGame
     then: null,
     startGame(isBuildRun = false, isTrainingRun = false) {
+        if (localSettings.isHideHUD) {
+            simulation.draw.body = function () {
+                ctx.beginPath();
+                for (let i = 0, len = body.length; i < len; ++i) {
+                    let vertices = body[i].vertices;
+                    ctx.moveTo(vertices[0].x, vertices[0].y);
+                    for (let j = 1; j < vertices.length; j++) {
+                        ctx.lineTo(vertices[j].x, vertices[j].y);
+                    }
+                    ctx.lineTo(vertices[0].x, vertices[0].y);
+                }
+                ctx.fillStyle = color.block;
+                ctx.fill();
+            }
+        } else {
+            simulation.draw.body = simulation.draw.bodyDefault
+        }
         simulation.isTextLogOpen = true
         simulation.clearMap()
         if (!isBuildRun) { //if a build run logic flow returns to "experiment-button").addEventListener
@@ -867,11 +824,9 @@ const simulation = {
         if (!localSettings.isHideHUD) {
             document.getElementById("right-HUD").style.display = "inline"
             document.getElementById("defense-bar").style.display = "inline"
-            document.getElementById("damage-bar").style.display = "inline"
         } else {
             document.getElementById("right-HUD").style.display = "none"
             document.getElementById("defense-bar").style.display = "none"
-            document.getElementById("damage-bar").style.display = "none"
         }
         document.getElementById("guns").style.display = "inline"
         document.getElementById("field").style.display = "inline"
@@ -943,6 +898,7 @@ const simulation = {
         simulation.lastLogTime = 0;
         mobs.mobDeaths = 0
         level.isFlipped = false
+        level.isFlipping = false;
         level.onLevel = 0;
         level.levelsCleared = 0;
         level.updateDifficulty()
@@ -958,10 +914,12 @@ const simulation = {
         m.alive = true;
         m.definePlayerMass();
         m.onGround = false
+        // m.groundCount = 0
         m.lastOnGroundCycle = 0
-        m.health = 0;
+        // m.addHealth(0.25)
+        m.health = 0.25;
+
         level.isLowHeal = false
-        m.addHealth(0.25)
         m.drop();
         m.holdingTarget = null
 
@@ -997,7 +955,6 @@ const simulation = {
                         }
                         const damage = tech.damageAdjustments() //update damage bar
                         if (m.lastCalculatedDamage !== damage) {
-                            document.getElementById("damage-bar").style.height = Math.floor((Math.atan(0.25 * damage - 0.25) + 0.25) * 0.63 * canvas.height) + "px";
                             m.lastCalculatedDamage = damage
                         }
                     }
@@ -1006,6 +963,16 @@ const simulation = {
         }
         simulation.ephemera.push({
             name: "checks", count: 0, do() {
+
+                if (localSettings.showDmgNumbers && !(m.cycle % 30)) {
+                    for (let i = 0; i < mob.length; i++) {
+                        if (mob[i].dmgLog) {
+                            simulation.dmgNumbers({ x: mob[i].position.x, y: mob[i].position.y - mob[i].radius * 1.4 }, Math.ceil(mob[i].dmgLog).toFixed(0), "rgba(255, 30, 67,", 40)
+                            mob[i].dmgLog = 0
+                        }
+                    }
+                }
+
                 if (!(m.cycle % 60)) { //once a second
                     //energy overfill 
                     if (m.energy > m.maxEnergy) {
@@ -1083,25 +1050,13 @@ const simulation = {
                     if (m.lastKillCycle + 300 > m.cycle) { //effects active for 5 seconds after killing a mob
                         if (tech.isEnergyRecovery && m.immuneCycle < m.cycle) {
                             m.energy += m.maxEnergy * 0.05 * level.isReducedRegen
-                            simulation.drawList.push({ //add dmg to draw queue
-                                x: m.pos.x,
-                                y: m.pos.y - 45,
-                                radius: Math.sqrt(m.maxEnergy * 0.05) * 60,
-                                color: "rgba(0, 204, 255,0.4)", //#0cf
-                                time: 4
-                            });
+                            for (let i = 0; i < 2; i++)simulation.energyGenGraphic()
                         }
                         if (tech.isHealthRecovery) {
                             if (tech.isEnergyHealth) {
                                 if (m.immuneCycle < m.cycle) {
                                     m.energy += m.maxEnergy * 0.005 * level.isReducedRegen
-                                    simulation.drawList.push({ //add dmg to draw queue
-                                        x: m.pos.x,
-                                        y: m.pos.y,
-                                        radius: Math.sqrt(m.maxEnergy * 0.02) * 60,
-                                        color: "rgba(0, 204, 255,0.4)", //#0cf
-                                        time: 4
-                                    });
+                                    simulation.energyGenGraphic()
                                 }
                             } else {
                                 const heal = 0.005 * m.maxHealth
@@ -1119,12 +1074,14 @@ const simulation = {
 
                     if (!(m.cycle % 420)) { //once every 7 seconds
                         //check if player is inside the map
-                        if (Matter.Query.point(map, m.pos).length > 0 || Matter.Query.point(map, player.position).length > 0) {
+
+                        if (Matter.Query.ray(map, m.pos, player.position).length > 0) {
+                            // if (Matter.Query.point(map, m.pos).length > 0 || Matter.Query.point(map, player.position).length > 0) {
                             //check for the next few seconds to see if being stuck continues
                             simulation.ephemera.push({
                                 count: 240, //cycles before it self removes
                                 do() {
-                                    if (Matter.Query.point(map, m.pos).length > 0 || Matter.Query.point(map, player.position).length > 0) {
+                                    if (Matter.Query.ray(map, m.pos, player.position).length > 0) {
                                         this.count--
 
                                         if (this.count < 0) {
@@ -1139,16 +1096,17 @@ const simulation = {
                             })
                         }
                         if (tech.isZeno) {
-                            if (tech.isEnergyHealth) {
-                                m.energy *= 0.95
-                            } else {
-                                m.health *= 0.95 //remove 5%
-                                m.displayHealth();
-                            }
+                            m.takeDamage(0.05 * (tech.isEnergyHealth ? m.energy : m.health), false)
+                            // if (tech.isEnergyHealth) {
+                            //     m.energy *= 0.95
+                            // } else {
+                            //     m.health *= 0.95 //remove 5%
+                            //     m.displayHealth();
+                            // }
                             simulation.drawList.push({ //add dmg to draw queue
                                 x: m.pos.x,
                                 y: m.pos.y,
-                                radius: 5,
+                                radius: 10,
                                 color: "rgb(255, 0, 195)",
                                 time: 4
                             });
@@ -1156,12 +1114,21 @@ const simulation = {
                         if (tech.cyclicImmunity && m.immuneCycle < m.cycle + tech.cyclicImmunity) m.immuneCycle = m.cycle + tech.cyclicImmunity; //player is immune to damage for 60 cycles
 
 
-
                         let i = body.length;
                         while (i--) {
                             if (body[i].position.y > simulation.fallHeight) {
-                                Matter.Composite.remove(engine.world, body[i]);
-                                body.splice(i, 1);
+                                if (body[i].isInvulnerable) {
+                                    Matter.Body.setVelocity(body[i], { x: 0, y: 0 });
+                                    if (level.fallMode === "position") {
+                                        const posXClamped = Math.min(Math.max(level.fallModeBounds.left, body[i].position.x), level.fallModeBounds.right)
+                                        Matter.Body.setPosition(body[i], { x: posXClamped, y: level.enter.y - 4000 });
+                                    } else {
+                                        Matter.Body.setPosition(body[i], { x: level.enter.x + 50, y: level.enter.y - 20 });
+                                    }
+                                } else {
+                                    Matter.Composite.remove(engine.world, body[i]);
+                                    body.splice(i, 1);
+                                }
                             }
                         }
                         i = powerUp.length
@@ -1236,9 +1203,16 @@ const simulation = {
             if (tech.isMutualism && !tech.isEnergyHealth) {
                 for (let i = 0; i < bullet.length; i++) {
                     if (bullet[i].isMutualismActive) {
-                        m.health += 0.01 + 0.01 * ((bullet[i].isSpore || bullet[i].isFlea) ? 0 : 1)
-                        if (m.health > m.maxHealth) m.health = m.maxHealth;
-                        m.displayHealth();
+                        if (tech.isMutualism && this.isMutualismActive) {
+                            if (tech.isEnergyHealth) {
+                                m.energy += 0.01 + 0.01 * ((bullet[i].isSpore || bullet[i].isFlea) ? 0 : 1)
+                                simulation.energyGenGraphic()
+                            } else {
+                                m.health += 0.01 + 0.01 * ((bullet[i].isSpore || bullet[i].isFlea) ? 0 : 1)
+                                if (m.health > m.maxHealth) m.health = m.maxHealth;
+                                m.displayHealth();
+                            }
+                        }
                     }
                 }
             }
@@ -1282,7 +1256,7 @@ const simulation = {
         if (tech.isHealAttract && m.alive) { //send health power ups to the next level
             let healCount = 0
             for (let i = 0, len = powerUp.length; i < len; i++) {
-                if (powerUp[i].name === "heal" && Vector.magnitudeSquared(Vector.sub(powerUp[i].position, m.pos)) < 1000000) healCount++
+                if (powerUp[i].name === "heal") healCount++
             }
             //respawn health in animation frame
             let respawnHeal = () => {
@@ -1303,6 +1277,7 @@ const simulation = {
             let sporeCount = 0
             let wormCount = 0
             let fleaCount = 0
+            // let zombieCount = 0
             for (let i = 0; i < bullet.length; ++i) {
                 if (bullet[i].isDrone && bullet[i].endCycle !== Infinity) {
                     droneArray.push({
@@ -1317,18 +1292,19 @@ const simulation = {
                 } else if (bullet[i].isFlea) {
                     fleaCount++
                 }
+                // else if (bullet[i].isZombie) {
+                //     zombieCount++
+                // }
             }
 
+            // const where = m.pos
             //respawn drones in animation frame
             requestAnimationFrame(() => {
                 let respawnDrones = () => {
-                    const where = {
-                        x: level.enter.x + 50,
-                        y: level.enter.y - 60
-                    }
                     if (droneArray.length) {
                         requestAnimationFrame(respawnDrones);
                         if (!simulation.paused && !simulation.isChoosing && m.alive) {
+                            const where = { x: level.enter.x + 50, y: level.enter.y - 60 }
                             if (tech.isDroneRadioactive) {
                                 b.droneRadioactive({ x: where.x + 50 * (Math.random() - 0.5), y: where.y + 50 * (Math.random() - 0.5) }, 0)
                                 if (droneArray[0].scale) bullet[bullet.length - 1].size = droneArray[0].scale
@@ -1355,14 +1331,8 @@ const simulation = {
                     requestAnimationFrame(respawnSpores);
                     if (!simulation.paused && !simulation.isChoosing) {
                         sporeCount--
-                        const where = {
-                            x: level.enter.x + 50,
-                            y: level.enter.y - 60
-                        }
-                        b.spore({
-                            x: where.x + 100 * (Math.random() - 0.5),
-                            y: where.y + 120 * (Math.random() - 0.5)
-                        })
+                        const where = { x: level.enter.x + 50, y: level.enter.y - 60 }
+                        b.spore({ x: where.x + 100 * (Math.random() - 0.5), y: where.y + 120 * (Math.random() - 0.5) })
                     }
                 }
             }
@@ -1374,14 +1344,8 @@ const simulation = {
                     requestAnimationFrame(respawnWorms);
                     if (!simulation.paused && !simulation.isChoosing) {
                         wormCount--
-                        const where = {
-                            x: level.enter.x + 50,
-                            y: level.enter.y - 60
-                        }
-                        b.worm({
-                            x: where.x + 100 * (Math.random() - 0.5),
-                            y: where.y + 120 * (Math.random() - 0.5)
-                        })
+                        const where = { x: level.enter.x + 50, y: level.enter.y - 60 }
+                        b.worm({ x: where.x + 100 * (Math.random() - 0.5), y: where.y + 120 * (Math.random() - 0.5) })
                     }
                 }
             }
@@ -1393,30 +1357,34 @@ const simulation = {
                     requestAnimationFrame(respawnFleas);
                     if (!simulation.paused && !simulation.isChoosing) {
                         fleaCount--
-                        const where = {
-                            x: level.enter.x + 50,
-                            y: level.enter.y - 60
-                        }
                         const speed = 6 + 3 * Math.random()
                         const angle = 2 * Math.PI * Math.random()
-                        b.flea({
-                            x: where.x + 100 * (Math.random() - 0.5),
-                            y: where.y + 120 * (Math.random() - 0.5)
-                        }, {
-                            x: speed * Math.cos(angle),
-                            y: speed * Math.sin(angle)
-                        })
+                        const where = { x: level.enter.x + 50, y: level.enter.y - 60 }
+                        b.flea({ x: where.x + 100 * (Math.random() - 0.5), y: where.y + 120 * (Math.random() - 0.5) }, { x: speed * Math.cos(angle), y: speed * Math.sin(angle) })
                     }
                 }
             }
             requestAnimationFrame(respawnFleas);
+
+
+            //respawn spores in animation frame
+            // let respawnZombies = () => {
+            //     if (zombieCount > 0) {
+            //         requestAnimationFrame(respawnZombies);
+            //         if (!simulation.paused && !simulation.isChoosing) {
+            //             zombieCount--
+            //             spawn.zombie(where.x + 100 * (Math.random() - 0.5), where.y + 120 * (Math.random() - 0.5))
+            //         }
+            //     }
+            // }
+            // requestAnimationFrame(respawnZombies);
         }
         if (tech.isQuantumEraser && m.alive) {
             let count = 0
             for (let i = 0, len = mob.length; i < len; i++) {
                 if (mob[i].isDropPowerUp && mob[i].alive) count++
             }
-            count *= 0.4 //to fake the 25% chance, this makes it not random, and more predictable
+            count *= 0.44 //to fake the chance, this makes it not random, and more predictable
             let cycle = () => { //run after waiting a cycle for the map to be cleared
                 const types = ["heal", "ammo", "heal", "ammo", "research", "coupling", "boost", "tech", "gun", "field"]
                 for (let i = 0; i < count; i++) powerUps.spawnDelay(types[Math.floor(Math.random() * types.length)], 1)
@@ -1495,7 +1463,6 @@ const simulation = {
     // },
     testingOutput() {
         ctx.fillStyle = "#000";
-        ctx.textAlign = "center";
         ctx.fillText(`(${simulation.mouseInGame.x.toFixed(1)}, ${simulation.mouseInGame.y.toFixed(1)})`, simulation.mouse.x, simulation.mouse.y - 20);
     },
     sight: { //credit to Cornbread2100 for adding this algorithm to n-gon
@@ -1844,7 +1811,7 @@ const simulation = {
                 }
             }
         },
-        body() {
+        bodyDefault() {
             ctx.beginPath();
             for (let i = 0, len = body.length; i < len; ++i) {
                 let vertices = body[i].vertices;
@@ -1860,6 +1827,7 @@ const simulation = {
             ctx.strokeStyle = color.blockS;
             ctx.stroke();
         },
+        body() { },
         cons() {
             ctx.beginPath();
             for (let i = 0, len = cons.length; i < len; ++i) {
@@ -1877,9 +1845,6 @@ const simulation = {
             ctx.stroke();
         },
         wireFrame() {
-            // ctx.textAlign = "center";
-            // ctx.textBaseline = "middle";
-            // ctx.fillStyle = "#999";
             const bodies = Composite.allBodies(engine.world);
             ctx.beginPath();
             for (let i = 0; i < bodies.length; ++i) {
@@ -1927,7 +1892,7 @@ const simulation = {
                 ctx.lineTo(bodyDraw[j].x, bodyDraw[j].y);
             }
             ctx.lineTo(bodyDraw[0].x, bodyDraw[0].y);
-            ctx.fillStyle = "rgba(255, 255, 0, 0.4)";
+            ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
             ctx.fill();
             // ctx.stroke();
             //head sensor
@@ -2559,40 +2524,4 @@ const simulation = {
         });
         document.getElementById("construct").innerHTML = outHTML
     },
-    // copyToClipBoard(value) {
-    //     // Create a fake textarea
-    //     const textAreaEle = document.createElement('textarea');
-
-    //     // Reset styles
-    //     textAreaEle.style.border = '0';
-    //     textAreaEle.style.padding = '0';
-    //     textAreaEle.style.margin = '0';
-
-    //     // Set the absolute position
-    //     // User won't see the element
-    //     textAreaEle.style.position = 'absolute';
-    //     textAreaEle.style.left = '-9999px';
-    //     textAreaEle.style.top = `0px`;
-
-    //     // Set the value
-    //     textAreaEle.value = value
-
-    //     // Append the textarea to body
-    //     document.body.appendChild(textAreaEle);
-
-    //     // Focus and select the text
-    //     textAreaEle.focus();
-    //     textAreaEle.select();
-
-    //     // Execute the "copy" command
-    //     try {
-    //         document.execCommand('copy');
-    //     } catch (err) {
-    //         // Unable to copy
-    //         console.log(err)
-    //     } finally {
-    //         // Remove the textarea
-    //         document.body.removeChild(textAreaEle);
-    //     }
-    // },
 };

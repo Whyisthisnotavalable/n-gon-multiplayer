@@ -176,8 +176,19 @@ const mobs = {
                 effect() {
                     if ((simulation.cycle - this.startCycle) % 30 === 0) {
                         let dmg = tech.radioactiveDamage * this.dmg
-                        who.damage(dmg);
-                        if (who.damageReduction) {
+                        if (tech.isRadStackDamage) dmg *= 1 + 0.07 * who.status.length
+                        if (who.damageReduction === 0) {
+                            this.endCycle = 0 //invulnerability clears radiation
+                            simulation.drawList.push({ //add dmg to draw queue
+                                x: who.position.x + (Math.random() - 0.5) * who.radius * 0.5,
+                                y: who.position.y + (Math.random() - 0.5) * who.radius * 0.5,
+                                radius: Math.log(dmg + 1.1) * 30,
+                                color: "rgb(255, 255, 255)",
+                                time: simulation.drawTime * 3
+                            });
+                        } else {
+                            // requestAnimationFrame(() => { who.damage(dmg) });
+                            who.damage(dmg);
                             simulation.drawList.push({ //add dmg to draw queue
                                 x: who.position.x + (Math.random() - 0.5) * who.radius * 0.5,
                                 y: who.position.y + (Math.random() - 0.5) * who.radius * 0.5,
@@ -508,8 +519,8 @@ const mobs = {
                     ctx.setLineDash([125 * Math.random(), 125 * Math.random()]);
                     // ctx.lineDashOffset = 6*(simulation.cycle % 215);
                     if (this.distanceToPlayer() < this.laserRange) {
-                        if (m.immuneCycle < m.cycle) {
-                            m.takeDamage(0.0003 * this.damageScale());
+                        if (m.immuneCycle < m.cycle && !(m.cycle % 15)) {
+                            m.takeDamage(0.0045 * this.damageScale());
                             if (m.energy > 0.1) m.energy -= 0.003
                         }
                         ctx.beginPath();
@@ -535,7 +546,7 @@ const mobs = {
                     ctx.fill();
                 }
             },
-            wing(a, radius = 250, ellipticity = 0.4, dmg = 0.0006) {
+            wing(a, radius = 250, ellipticity = 0.4, dmg = 0.0003) {
                 const minorRadius = radius * ellipticity
                 const perp = { x: Math.cos(a), y: Math.sin(a) } //
                 const where = Vector.add(this.position, Vector.mult(perp, radius + 0.8 * this.radius))
@@ -547,19 +558,27 @@ const mobs = {
                 //check for wing -> player damage
                 const hitPlayer = Matter.Query.ray([player], this.position, Vector.add(this.position, Vector.mult(perp, radius * 2.05)), minorRadius)
                 if (hitPlayer.length && m.immuneCycle < m.cycle) {
-                    m.takeDamage(dmg * this.damageScale());
+                    if (!(m.cycle % 10)) m.takeDamage(10 * dmg * this.damageScale());
                     // if (m.immuneCycle < m.cycle + immuneTime) m.immuneCycle = m.cycle + immuneTime; //player is immune to damage
 
                     //push player away
                     const sub = Vector.sub(m.pos, this.position)
-                    const push = Vector.mult(Vector.normalise(sub), 0.3 * player.mass)
+                    const push = Vector.mult(Vector.normalise(sub), 0.15 * player.mass)
                     Matter.Body.setVelocity(player, {
-                        x: 0.8 * player.velocity.x + push.x,
-                        y: 0.8 * player.velocity.y + push.y - 0.1 * player.mass
+                        x: 0.9 * player.velocity.x + push.x,
+                        y: 0.9 * player.velocity.y + push.y - 0.1 * player.mass
                     })
                 }
             },
             searchSpring() {
+                ctx.beginPath();
+                ctx.moveTo(this.cons.pointA.x, this.cons.pointA.y)
+                ctx.lineTo(this.cons.bodyB.position.x, this.cons.bodyB.position.y)
+                ctx.moveTo(this.cons2.pointA.x, this.cons2.pointA.y)
+                ctx.lineTo(this.cons2.bodyB.position.x, this.cons2.bodyB.position.y)
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = "#222";
+                ctx.stroke();
                 //draw the two dots on the end of the springs
                 ctx.beginPath();
                 ctx.arc(this.cons.pointA.x, this.cons.pointA.y, 6, 0, 2 * Math.PI);
@@ -959,7 +978,11 @@ const mobs = {
             },
             explode(mass = this.mass) {
                 if (m.immuneCycle < m.cycle) {
-                    m.takeDamage(Math.min(Math.max(0.03 * Math.sqrt(mass), 0.01), 0.4) * this.damageScale());
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            m.takeDamage(Math.min(Math.max(0.03 * Math.sqrt(mass), 0.01), 0.4) * this.damageScale())
+                        })
+                    })
                     this.isDropPowerUp = false;
                     this.death(); //death with no power up or body
                 }
@@ -974,7 +997,8 @@ const mobs = {
             damageScale() {
                 return ((spawn.mobDmgDoneByTier[this.tier] && level.levelsCleared < 14) ? spawn.mobDmgDoneByTier[this.tier] : spawn.dmgToPlayerByLevelsCleared())
             },
-            damage(dmg, isBypassShield = false) { //damage taken by this mob 
+            dmgLog: 0, //used to record damage done to mob for producing damage numbers
+            damage(dmg, isBypassShield = false, where = this.position, isDmgText = false) { //damage taken by this mob 
                 if ((!this.isShielded || isBypassShield) && this.alive) {
                     if (dmg !== Infinity) {
                         dmg *= tech.damageAdjustments()
@@ -1004,6 +1028,67 @@ const mobs = {
                                         },
                                     })
                                 }
+                                if (tech.isChatter && !this.isInvulnerable) {
+                                    let isTalking = false
+                                    for (let i = 0; i < simulation.ephemera.length; i++) {
+                                        if (simulation.ephemera[i].name === "in game text") {
+                                            isTalking = true
+                                        }
+                                    }
+                                    if (!isTalking) {
+                                        //from https://github.com/landgreen/n-gon/discussions/500
+                                        const quotes = [
+                                            // Existing quotes
+                                            "I can do *anything!*",
+                                            "Chaos, chaos!",
+                                            "Let's make the devilskn-",
+                                            "Darmok and Jaled at Tanagra",
+                                            "Kiazi's children, their faces wet!",
+                                            "Sokath with his eyes uncovered!",
+                                            "Are you suggesting that coconuts can migrate?",
+                                            "One, Two, Five!",
+                                            "Is it an African swallow or a European swallow?",
+                                            "kept you waiting, huh?",
+                                            "This prison... to hold... me?",
+                                            "Did everyone see that? Because I will not be doing it again",
+                                            "I see the light... it's a [404 Error]!",
+                                            "I wish i took those digeridoo lessons",
+                                            "Your mother was a hamster, and your father smelt of elderberries",
+                                            "In Rod we trust",
+                                            "AAAAAAAA",
+                                            "the devil may cry?",
+                                            "hey Mr M? are you still mad at me?",
+
+                                            // New suggestions from discussion #500
+                                            "yippee",
+                                            "If you wish to defeat me train for another hundred years.",
+                                            "WE CALLED TO TALK ABOUT YOUR CAR'S LIMITED WARRANTY",
+                                            "KAMEHAMEHA!!!!!!!!!!",
+                                            "Who you gonna call? GHOST BUSTERS!",
+                                            "JARVIS evaporate this man",
+                                            "Squirtle use water beam!",
+                                            "El pollo está en llamas.",
+                                            "pentagon, hexagon, octagon, nevergon.. na give you up",
+                                            "Eat cube bozo",
+                                            "let's make the devilsknife!",
+                                            "you know, I really dislike you.",
+                                            "Good luck, and may the odds be ever in your favor",
+                                            "You dare defy the Lord of Darkness."
+                                        ];
+                                        const color = `#${Math.floor(Math.random() * 76 + 180).toString(16)}${Math.floor(Math.random() * 121).toString(16).padStart(2, '0')}${Math.floor(Math.random() * 121).toString(16).padStart(2, '0')}`
+                                        const quote = quotes[Math.floor(Math.random() * quotes.length)]
+                                        // simulation.inGameConsole(`<span style="color:"${color}">${quote}</span>`, 360)
+                                        level.inGameText(this.position.x, this.position.y - 50, quote, 240, color)
+                                    }
+                                    // simulation.ephemera.push({
+                                    //     count: 240, //cycles before it self removes
+                                    //     vertices: this.vertices,
+                                    //     do() {
+                                    //         this.count--
+                                    //         if (this.count < 0) simulation.removeEphemera(this)
+                                    //     },
+                                    // })
+                                }
                             } else if (tech.isMobLowHealth && this.health < 0.25) {
                                 dmg *= 3
                                 simulation.ephemera.push({
@@ -1029,6 +1114,51 @@ const mobs = {
                                 })
                             }
                         }
+                        if (tech.isNegAura && m.fieldMode === 3 && this.health < 0.6 && Vector.magnitude(Vector.sub(m.pos, this.position)) < (m.fieldDrawRadius + 2 * this.radius + 20)) {
+                            dmg *= 8
+                            simulation.ephemera.push({
+                                count: 3, //cycles before it self removes
+                                vertices: this.vertices,
+                                do() {
+                                    this.count--
+                                    if (this.count < 0) simulation.removeEphemera(this)
+
+                                    ctx.beginPath();
+                                    ctx.moveTo(this.vertices[0].x, this.vertices[0].y);
+                                    for (let j = 1, len = this.vertices.length; j < len; j += 1) ctx.lineTo(this.vertices[j].x, this.vertices[j].y);
+                                    ctx.lineTo(this.vertices[0].x, this.vertices[0].y);
+                                    ctx.lineWidth = 10;
+                                    ctx.strokeStyle = `#f07`;
+                                    ctx.stroke();
+                                    ctx.lineJoin = "round"
+                                    ctx.miterLimit = 5
+                                    ctx.fillStyle = "#000"
+                                    ctx.fill();
+                                },
+                            })
+                        }
+                        if (tech.isFarAwayDmg) dmg *= 1 + Math.sqrt(Math.max(500, Math.min(3000, this.distanceToPlayer())) - 500) * 0.0067 //up to 33% dmg at max range of 3000
+                        //energy and heal drain should be calculated after damage boosts and before mass reduction
+                        if (tech.energySiphon && this.isDropPowerUp && m.immuneCycle < m.cycle) {
+                            //dmg !== Infinity &&
+                            const regen = Math.min(this.health, dmg) * tech.energySiphon * level.isReducedRegen
+                            if (!isNaN(regen) && regen !== Infinity) {
+                                m.energy += regen //max regen is 0.04 with one stack of tech.energySiphon
+                                let cycles = Math.min(40, Math.floor(200 * regen))
+                                if (cycles > 0) {
+                                    for (let i = 0; i < cycles; i++) simulation.energyGenGraphic()
+                                } else if (Math.random() < 0.01) {
+                                    simulation.energyGenGraphic(3 + Math.floor(Math.random() * 10))
+                                }
+                            }
+                        }
+                        if (localSettings.showDmgNumbers && this.damageReduction > 0) {
+                            if (isDmgText) {
+                                simulation.dmgNumbers(where, Math.ceil(dmg).toFixed(0))
+                            } else {
+                                this.dmgLog += dmg
+                            }
+                        }
 
                         //mobs specific damage changes
                         if (this.tier && level.levelsCleared < 14) {
@@ -1036,18 +1166,9 @@ const mobs = {
                         } else {
                             dmg *= spawn.mobDmgTakenByLevelsCleared() //scale by level.levelsCleared if no tier
                         }
-                        dmg *= this.damageReduction //damage reduction specific to this mob (not based on tier)
-
-                        if (tech.isFarAwayDmg) dmg *= 1 + Math.sqrt(Math.max(500, Math.min(3000, this.distanceToPlayer())) - 500) * 0.0067 //up to 33% dmg at max range of 3000
-                        //energy and heal drain should be calculated after damage boosts and before mass reduction
-                        if (tech.energySiphon && this.isDropPowerUp && m.immuneCycle < m.cycle) {
-                            //dmg !== Infinity &&
-                            const regen = Math.min(this.health, dmg) * tech.energySiphon * level.isReducedRegen
-                            if (!isNaN(regen) && regen !== Infinity) m.energy += regen
-                        }
                         dmg /= Math.sqrt(this.mass)
+                        dmg *= this.damageReduction
                     }
-
                     this.health -= dmg
                     //this.fill = this.color + this.health + ')';
                     this.onDamage(dmg); //custom damage effects
@@ -1097,7 +1218,28 @@ const mobs = {
                 this.onDeath(this); //custom death effects
                 this.removeConsBB();
                 this.alive = false; //triggers mob removal in mob[i].replace(i)
-                // console.log(this.shieldCount)
+
+                if (localSettings.showDmgNumbers && this.dmgLog) {
+                    simulation.ephemera.push({
+                        count: 0, //cycles before it self removes
+                        dmg: Math.ceil(this.dmgLog).toFixed(0),
+                        where: { x: this.position.x, y: this.position.y - this.radius * 1.4 - 13 },
+                        drift: { x: (0.6 * Math.random()) * (Math.random() < 0.5 ? -1 : 1), y: 0.7 + 0.4 * Math.random() },
+                        do() {
+                            this.count++
+                            if (this.count > 40) {
+                                simulation.removeEphemera(this)
+                            } else {
+                                ctx.font = "50px Arial"; //monospace
+                                ctx.fillStyle = `rgba(255, 0, 17,${(40 - this.count) / 20})`;
+                                // ctx.textBaseline = "middle";
+                                ctx.fillText(this.dmg, this.where.x + this.count * this.drift.x, this.where.y - 40 - this.count * this.drift.y);
+
+                            }
+                        },
+                    })
+                }
+                this.dmgLog = 0
 
                 if (this.isDropPowerUp) {
                     if (level.isMobDeathHeal) {
@@ -1198,6 +1340,11 @@ const mobs = {
                     }
 
                     if (tech.isVerlet && !m.isTimeDilated) {
+                        if (tech.isBarycenter) {
+                            b.orbitBot(player.position, false);
+                            bullet[bullet.length - 1].endCycle = simulation.cycle + 1200
+                        }
+
                         requestAnimationFrame(() => {
                             simulation.timePlayerSkip(this.isBoss ? 60 : 30)
                             simulation.loop(); //ending with a wipe and normal loop fixes some very minor graphical issues where things are draw in the wrong locations
@@ -1251,6 +1398,20 @@ const mobs = {
                             for (let i = 0; i < amount; i++) b.spore(this.position)
                         }
                     }
+                    if (tech.isChitin) {
+                        // add new segment where the current tip is
+                        for (let i = 0; i < 2; i++) {
+                            if (tech.wire.segments.length < 200) { //cap max length at 200 for performance
+                                const last = tech.wire.segments[tech.wire.segments.length - 1];
+                                tech.wire.segments.push({ x: last.x, y: last.y, oldX: last.x, oldY: last.y });
+                            }
+                        }
+                    }
+                    if (tech.isConchoidal) {
+                        const dmg = 1.04
+                        m.damageDone *= dmg
+                        tech.conchoidalDamage *= dmg
+                    }
                     if (tech.isExplodeMob) {
                         b.explosion(this.position, Math.min(700, Math.sqrt(this.mass + 6) * (30 + 60 * Math.random())))
                     }
@@ -1273,7 +1434,7 @@ const mobs = {
                     }
                     if (tech.isAddRemoveMaxHealth) {
                         if (!this.isBoss) {
-                            const amount = 0.0025
+                            const amount = 0.005
                             if (tech.isEnergyHealth) {
                                 if (m.maxEnergy > amount) {
                                     tech.healMaxEnergyBonus -= amount
@@ -1302,11 +1463,11 @@ const mobs = {
                 }
                 if (tech.isRadioactive) {
                     //look for dots and spread them
-                    let dmgTotal = 0
+                    let dmg = 0
                     for (let i = 0, len = this.status.length; i < len; i++) {
-                        if (this.status[i].type === "dot") dmgTotal += this.status[i].dmg * (this.status[i].endCycle - simulation.cycle)
+                        if (this.status[i].type === "dot") dmg += this.status[i].dmg //* (this.status[i].endCycle - simulation.cycle)
                     }
-                    if (dmgTotal > 0) { //look for closest mob
+                    if (dmg > 0) { //look for closest mob
                         let closestRadius = 500;
                         let closestIndex = null;
                         for (let i = 0, len = mob.length; i < len; ++i) {
@@ -1317,7 +1478,7 @@ const mobs = {
                             }
                         }
                         if (closestIndex) {
-                            mobs.statusDoT(mob[closestIndex], dmgTotal / 180, 180)
+                            mobs.statusDoT(mob[closestIndex], dmg, tech.isLongRadiation ? 715392000 : 180)
                             ctx.beginPath();
                             ctx.moveTo(this.position.x, this.position.y);
                             ctx.lineTo(mob[closestIndex].position.x, mob[closestIndex].position.y);
@@ -1325,14 +1486,6 @@ const mobs = {
                             ctx.strokeStyle = "rgba(0,80,80,1)";
                             ctx.stroke();
                         }
-                        //draw AOE
-                        // simulation.drawList.push({ //add dmg to draw queue
-                        //     x: this.position.x,
-                        //     y: this.position.y,
-                        //     radius: radius,
-                        //     color: "rgba(0,80,80,0.03)",
-                        //     time: 15
-                        // });
                     }
                 }
             },
@@ -1376,7 +1529,7 @@ const mobs = {
             replace(i) {
                 //if there are too many bodies don't turn into blocks to help performance
                 // if (this.leaveBody && body.length < mobs.maxMobBody && this.mass < 200 && this.radius > 18) {
-                if (this.leaveBody && body.length < mobs.maxMobBody && this.mass < 200 && this.mass > 1 && this.radius > 18) {
+                if (this.leaveBody && body.length < mobs.maxMobBody && this.mass < 200 * (localSettings.isHideHUD ? 0.4 : 1) && this.mass > 1 && this.radius > 18) {
 
                     let v = Matter.Vertices.hull(Matter.Vertices.clockwiseSort(this.vertices)) //might help with vertex collision issue, not sure
                     if (v.length > 5 && body.length < 35 && Math.random() < 0.25) {
